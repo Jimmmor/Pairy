@@ -18,7 +18,7 @@ st.set_page_config(layout="wide")
 st.title("📈 Pairs Trading Monitor")
 
 # Sidebar UI: laat gebruiker keuzes maken en return parameters
-params = sidebar_ui(tickers)
+params = sidebar_ui()
 
 # Data ophalen
 data1 = load_and_process_data(params['name1'], params['periode'], params['interval'])
