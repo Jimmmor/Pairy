@@ -1,63 +1,47 @@
-# stats/metrics.py
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-def compute_metrics(df, corr_window, zscore_entry_threshold, zscore_exit_threshold, name1, name2, returns_clean, st):
-    X = df['price1'].values.reshape(-1, 1)
-    y = df['price2'].values
-
+def linear_regression_spread(price1: pd.Series, price2: pd.Series):
+    """
+    Bereken alpha, beta en R² van lineaire regressie price2 ~ price1.
+    """
+    X = price1.values.reshape(-1, 1)
+    y = price2.values
     model = LinearRegression()
     model.fit(X, y)
-
     alpha = model.intercept_
     beta = model.coef_[0]
     r_squared = model.score(X, y)
+    return alpha, beta, r_squared
 
-    df['spread'] = df['price2'] - (alpha + beta * df['price1'])
+def calculate_spread(price1: pd.Series, price2: pd.Series, alpha: float, beta: float):
+    """
+    Bereken de spread op basis van regressie parameters.
+    """
+    spread = price2 - (alpha + beta * price1)
+    return spread
 
-    spread_mean = df['spread'].mean()
-    spread_std = df['spread'].std()
+def calculate_zscore(spread: pd.Series):
+    """
+    Bereken z-score van de spread.
+    """
+    mean = spread.mean()
+    std = spread.std()
+    zscore = (spread - mean) / std
+    return zscore, mean, std
 
-    df['zscore'] = (df['spread'] - spread_mean) / spread_std
+def rolling_correlation(price1: pd.Series, price2: pd.Series, window: int):
+    """
+    Bereken rolling correlatie over window dagen.
+    """
+    return price1.rolling(window=window).corr(price2)
 
-    df['rolling_corr'] = df['price1'].rolling(window=corr_window).corr(df['price2'])
-
-    pearson_corr = df['price1'].corr(df['price2'])
-
-    df['long_entry'] = df['zscore'] < -zscore_entry_threshold
-    df['short_entry'] = df['zscore'] > zscore_entry_threshold
-    df['exit'] = df['zscore'].abs() < zscore_exit_threshold
-
-    if df['long_entry'].iloc[-1]:
-        current_position = f"Long Spread (koop {name2}, verkoop {name1})"
-    elif df['short_entry'].iloc[-1]:
-        current_position = f"Short Spread (verkoop {name2}, koop {name1})"
-    elif df['exit'].iloc[-1]:
-        current_position = "Exit positie (geen trade)"
-    else:
-        current_position = "Geen duidelijk signaal"
-
-    st.subheader("📈 Correlatie Statistieken")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("Pearson Correlatie", f"{pearson_corr:.4f}")
-        st.metric("Beta (β)", f"{beta:.4f}")
-        st.metric("R-squared", f"{r_squared:.4f}")
-
-    with col2:
-        current_rolling_corr = df['rolling_corr'].iloc[-1]
-        avg_rolling_corr = df['rolling_corr'].mean()
-        st.metric("Huidige Rolling Correlatie", f"{current_rolling_corr:.4f}")
-        st.metric("Gemiddelde Rolling Correlatie", f"{avg_rolling_corr:.4f}")
-        st.metric("Alpha (α)", f"{alpha:.6f}")
-
-    with col3:
-        returns_corr = returns_clean['returns1'].corr(returns_clean['returns2'])
-        volatility_ratio = returns_clean['returns2'].std() / returns_clean['returns1'].std()
-        st.metric("Returns Correlatie", f"{returns_corr:.4f}")
-        st.metric("Volatiliteit Ratio", f"{volatility_ratio:.4f}")
-        st.metric("Std Error (β)", f"{np.sqrt(np.mean((df['price2'] - (alpha + beta * df['price1']))**2)):.4f}")
-
-    return df, current_position
+def generate_trade_signals(zscore: pd.Series, entry_threshold: float, exit_threshold: float):
+    """
+    Genereer long, short en exit signalen op basis van z-score thresholds.
+    """
+    long_entry = zscore < -entry_threshold
+    short_entry = zscore > entry_threshold
+    exit = zscore.abs() < exit_threshold
+    return long_entry, short_entry, exit
