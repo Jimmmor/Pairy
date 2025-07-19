@@ -45,3 +45,26 @@ def generate_trade_signals(zscore: pd.Series, entry_threshold: float, exit_thres
     short_entry = zscore > entry_threshold
     exit = zscore.abs() < exit_threshold
     return long_entry, short_entry, exit
+
+def compute_metrics(price1: pd.Series, price2: pd.Series, entry_threshold=2.0, exit_threshold=0.5, window=20):
+    """
+    Voert alle berekeningen uit en geeft een dict met de resultaten.
+    """
+    alpha, beta, r2 = linear_regression_spread(price1, price2)
+    spread = calculate_spread(price1, price2, alpha, beta)
+    zscore, mean, std = calculate_zscore(spread)
+    corr = rolling_correlation(price1, price2, window)
+    long_entry, short_entry, exit = generate_trade_signals(zscore, entry_threshold, exit_threshold)
+    return {
+        "alpha": alpha,
+        "beta": beta,
+        "r_squared": r2,
+        "spread": spread,
+        "zscore": zscore,
+        "mean_spread": mean,
+        "std_spread": std,
+        "rolling_corr": corr,
+        "long_entry": long_entry,
+        "short_entry": short_entry,
+        "exit": exit,
+    }
