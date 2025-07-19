@@ -21,8 +21,9 @@ st.title("📈 Pairs Trading Monitor")
 params = sidebar_ui(tickers)
 
 # Data ophalen
-data1 = load_data(params['coin1'], params['periode'], params['interval'])
-data2 = load_data(params['coin2'], params['periode'], params['interval'])
+data1 = load_and_process_data(params['coin1'], params['periode'], params['interval'])
+data2 = load_and_process_data(params['coin2'], params['periode'], params['interval'])
+
 
 if data1.empty or data2.empty:
     st.error("Geen data beschikbaar voor één of beide coins. Probeer een andere combinatie of periode.")
