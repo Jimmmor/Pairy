@@ -88,3 +88,39 @@ def plot_returns_scatter(df, name1, name2):
         font=dict(color='white')
     )
     return fig
+def plot_spread_signal(df, params):
+    import streamlit as st
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df.index, y=df['spread'], name='Spread', line=dict(color='orange')))
+    fig.add_trace(go.Scatter(x=df.index, y=df['entry_upper'], name='Upper Threshold', line=dict(color='red', dash='dash')))
+    fig.add_trace(go.Scatter(x=df.index, y=df['entry_lower'], name='Lower Threshold', line=dict(color='green', dash='dash')))
+    fig.add_trace(go.Scatter(x=df.index, y=df['exit'], name='Exit Threshold', line=dict(color='blue', dash='dot')))
+    fig.update_layout(title="Spread & Trade Signal", xaxis_title="Datum", yaxis_title="Spread", template='plotly_dark')
+    st.plotly_chart(fig, use_container_width=True)
+
+def plot_prices(df, params):
+    import streamlit as st
+    fig = plot_price(df, params['coin1'], params['coin2'])
+    st.plotly_chart(fig, use_container_width=True)
+
+def plot_zscore(df, params):
+    import streamlit as st
+    fig = plot_zscore(df, params['zscore_entry'], params['zscore_exit'])
+    st.plotly_chart(fig, use_container_width=True)
+
+def plot_rolling_correlation(df):
+    import streamlit as st
+    fig = plot_rolling_corr(df)
+    st.plotly_chart(fig, use_container_width=True)
+
+def plot_returns_scatter(df, params):
+    import streamlit as st
+    fig = plot_returns_scatter(df, params['coin1'], params['coin2'])
+    st.plotly_chart(fig, use_container_width=True)
+
+def plot_correlation_boxplot(df):
+    import streamlit as st
+    fig = go.Figure()
+    fig.add_trace(go.Box(y=df['rolling_corr'], name='Rolling Correlatie', boxpoints='all', jitter=0.5, whiskerwidth=0.2, marker_color='cyan'))
+    fig.update_layout(title="Boxplot van Rolling Correlatie", yaxis_title="Correlatie", template='plotly_dark')
+    st.plotly_chart(fig, use_container_width=True)
