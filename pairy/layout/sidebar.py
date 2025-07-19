@@ -1,28 +1,64 @@
 import streamlit as st
-from constants.tickers import tickers
+from layout.sidebar import sidebar_ui
+from logic.data_loader import load_and_process_data
+from logic.signals import calculate_signals
+from stats.metrics import compute_metrics
+from visualizations.plots import (
+    plot_spread_signal,
+    plot_prices,
+    plot_zscore,
+    plot_rolling_corr,
+    plot_returns_scatter,
+    plot_correlation_boxplot,
+)
 
-def sidebar_ui():
-    st.sidebar.header("🔍 Kies een Coin Pair")
-    name1 = st.sidebar.selectbox("Coin 1", list(tickers.keys()), index=0)
-    remaining = [k for k in tickers.keys() if k != name1]
-    name2 = st.sidebar.selectbox("Coin 2", remaining, index=0)
-    
-    st.sidebar.markdown("---")
-    periode = st.sidebar.selectbox("Periode", ["1mo", "3mo", "6mo", "1y"], index=2)
-    interval_options = ["1d"] if periode in ["6mo", "1y"] else ["1d", "1h", "30m"]
-    interval = st.sidebar.selectbox("Interval", interval_options, index=0)
-    corr_window = st.sidebar.slider("Rolling correlatie window (dagen)", min_value=5, max_value=60, value=20, step=1)
-    
-    st.sidebar.markdown("---")
-    zscore_entry_threshold = st.sidebar.slider("Z-score entry threshold", min_value=1.0, max_value=5.0, value=2.0, step=0.1)
-    zscore_exit_threshold = st.sidebar.slider("Z-score exit threshold", min_value=0.0, max_value=2.0, value=0.5, step=0.1)
-    
-    return {
-        "name1": name1,
-        "name2": name2,
-        "periode": periode,
-        "interval": interval,
-        "corr_window": corr_window,
-        "zscore_entry_threshold": zscore_entry_threshold,
-        "zscore_exit_threshold": zscore_exit_threshold
-    }
+# Pagina-instellingen
+st.set_page_config(layout="wide")
+st.title("📈 Pairs Trading Monitor")
+
+# Sidebar UI: laat gebruiker keuzes maken en return parameters
+params = sidebar_ui()
+
+# Data ophalen en verwerken
+data1, data2 = load_and_process_data(
+    params['name1'], params['name2'], params['periode'], params['interval']
+)
+
+if data1.empty or data2.empty:
+    st.error("Geen data beschikbaar voor één of beide coins. Probeer een andere combinatie of periode.")
+    st.stop()
+
+# Signalen berekenen
+df = calculate_signals(data1, data2, params)
+
+# Statistieken berekenen
+metrics = compute_metrics(df)
+
+# Resultaten tonen
+st.subheader("🚦 Huidige trade signaal")
+st.write(f"**Z-score laatste waarde:** {df['zscore'].iloc[-1]:.2f}")
+st.write(f"**Signaal:** {metrics['current_position']}")
+
+# Grafieken weergeven
+plot_spread_signal(df, params)
+plot_prices(df, params)
+plot_zscore(df, params)
+plot_rolling_corr(df)
+plot_returns_scatter(df, params)
+plot_correlation_boxplot(df)
+
+# Statistische metrics tonen
+st.subheader("📈 Correlatie Statistieken")
+st.metric("Pearson Correlatie", f"{metrics['pearson_corr']:.4f}")
+st.metric("Beta (β)", f"{metrics['beta']:.4f}")
+st.metric("R-squared", f"{metrics['r_squared']:.4f}")
+
+st.subheader("🎯 Correlatie Beoordeling")
+st.write(f"**Correlatie beoordeling:** {metrics['corr_assessment']}")
+st.write(f"**R-squared beoordeling:** {metrics['r2_assessment']}")
+st.write(f"**Stabiliteit beoordeling:** {metrics['stability_assessment']}")
+
+# Export mogelijkheid
+if st.button("Exporteer analyse naar CSV"):
+    csv = df.to_csv(index=True)
+    st.download_button(label="Download CSV", data=csv, file_name="pairs_trading_analysis.csv", mime='text/csv')
