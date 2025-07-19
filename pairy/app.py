@@ -21,8 +21,8 @@ st.title("📈 Pairs Trading Monitor")
 params = sidebar_ui(tickers)
 
 # Data ophalen
-data1 = load_and_process_data(params['coin1'], params['periode'], params['interval'])
-data2 = load_and_process_data(params['coin2'], params['periode'], params['interval'])
+data1 = load_and_process_data(params['name1'], params['periode'], params['interval'])
+data2 = load_and_process_data(params['name2'], params['periode'], params['interval'])
 
 
 if data1.empty or data2.empty:
