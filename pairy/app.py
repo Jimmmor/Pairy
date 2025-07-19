@@ -4,7 +4,7 @@ from layout.sidebar import sidebar_ui
 from logic.data_loader import load_and_process_data
 from logic.signals import calculate_signals
 from stats.metrics import compute_metrics
-from visualizations.plots import (
+from visualizations.plot import (
     plot_spread_signal,
     plot_prices,
     plot_zscore,
