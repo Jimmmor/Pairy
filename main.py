@@ -16,6 +16,12 @@ from visualizations.plots import (
     plot_correlation_boxplot,
 )
 
+# Zorg dat Python de modules kan vinden
+sys.path.append(str(Path(__file__).parent))
+
+# Clear cache bij opstarten
+import streamlit as st
+st.cache_data.clear()
 # Pagina-instellingen
 st.set_page_config(layout="wide")
 st.title("📈 Pairs Trading Monitor")
