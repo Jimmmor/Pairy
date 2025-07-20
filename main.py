@@ -67,19 +67,24 @@ def main():
         # Data pipeline
         df = load_and_prepare_data(params)
         
-        # Analyse weergeven
-        show_analysis(df, params)
+        # Verpak data en parameters voor analyse
+        analysis_data = {
+            'df': df,
+            'params': params
+        }
+        
+        # Toon analyse
+        show_analysis(analysis_data)
         
         # Optionele backtest
         if params.get('run_backtest', False):
             with st.spinner("Backtest uitvoeren..."):
-                df_backtest, trades = show_backtest(df, params)
-                if trades:
-                    show_backtest(df_backtest, trades)
+                backtest_results = show_backtest(analysis_data)
+                if backtest_results:
+                    st.success("Backtest voltooid!")
                     
     except Exception as e:
         st.error(f"Er is een onverwachte fout opgetreden: {str(e)}")
         st.stop()
-
 if __name__ == "__main__":
     main()
