@@ -4,12 +4,18 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-def show(df):
+def show(data_and_params):
+    
+    df = data_and_params['df']
+    params = data_and_params['params']
+    
     """Toon de huidige analyse sectie"""
     st.header("📊 Huidige Analyse")
     
-    # Huidige signaal
-    show_current_signal(df)
+    # Huidige signaal sectie
+    current_zscore = df['zscore'].iloc[-1]
+    st.subheader("🚦 Huidige Trade Signaal")
+    st.write(f"**Z-score laatste waarde:** {current_zscore:.2f}")
     
     # Toon grafieken
     show_spread_chart(df)
