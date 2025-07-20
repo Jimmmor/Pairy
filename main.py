@@ -3,7 +3,9 @@ from constants.tickers import tickers
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from layout.sidebar import sidebar_ui
+from pages.sidebar import show as sidebar_ui
+from pages.analysis import show
+from pages.backtesting import show as show_backtest
 from logic.data_loader import load_data
 from logic.signals import calculate_signals
 from stats.metrics import compute_metrics
