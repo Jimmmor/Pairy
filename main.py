@@ -1,10 +1,10 @@
 import streamlit as st
 from constants.tickers import tickers
 from layout.sidebar import sidebar_ui
-from logic.data_loader import load_and_process_data
+from logic.data_loader import load_data
 from logic.signals import calculate_signals
 from stats.metrics import compute_metrics
-from visualizations.plot import (
+from visualizations.plots import (
     plot_spread_signal,
     plot_prices,
     plot_zscore,
@@ -18,12 +18,11 @@ st.set_page_config(layout="wide")
 st.title("📈 Pairs Trading Monitor")
 
 # Sidebar UI: laat gebruiker keuzes maken en return parameters
-params = sidebar_ui()
+params = sidebar_ui(tickers)
 
 # Data ophalen
-data1 = load_and_process_data(params['name1'], params['periode'], params['interval'])
-data2 = load_and_process_data(params['name2'], params['periode'], params['interval'])
-
+data1 = load_data(params['coin1'], params['periode'], params['interval'])
+data2 = load_data(params['coin2'], params['periode'], params['interval'])
 
 if data1.empty or data2.empty:
     st.error("Geen data beschikbaar voor één of beide coins. Probeer een andere combinatie of periode.")
