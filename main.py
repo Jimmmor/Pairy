@@ -24,35 +24,30 @@ def setup():
     )
 
 def load_and_prepare_data(params):
-    """
-    Laad en verwerk de data voor de geselecteerde coins
-    
-    Args:
-        params (dict): Parameters uit sidebar
-        
-    Returns:
-        pd.DataFrame: Voorbereide dataset
-    """
+    """Garandeer dat alle benodigde kolommen aanwezig zijn"""
     try:
-        # Data ophalen
-        with st.spinner("Bezig met laden van data..."):
-            data1 = load_data(params['coin1'], params['period'], params['interval'])
-            data2 = load_data(params['coin2'], params['period'], params['interval'])
+        # Data laden
+        data1 = load_data(params['coin1'], params['period'], params['interval'])
+        data2 = load_data(params['coin2'], params['period'], params['interval'])
         
         if data1.empty or data2.empty:
-            st.error("Geen data beschikbaar voor één of beide coins")
+            st.error("Ontbrekende data voor één of beide assets")
             st.stop()
             
-        # Data verwerken
+        # Data verwerken (inclusief z-score berekening)
         df = preprocess_data(data1, data2)
-        if df.empty:
-            st.error("Geen overlappende data tussen de geselecteerde coins")
+        
+        # Controleer kritieke kolommen
+        required_columns = ['price1', 'price2', 'spread', 'zscore']
+        if not all(col in df.columns for col in required_columns):
+            missing = [col for col in required_columns if col not in df.columns]
+            st.error(f"Ontbrekende kolommen in data: {', '.join(missing)}")
             st.stop()
             
         return df
         
     except Exception as e:
-        st.error(f"Fout bij verwerken van data: {str(e)}")
+        st.error(f"Data voorbereidingsfout: {str(e)}")
         st.stop()
 
 def main():
