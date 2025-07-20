@@ -1,48 +1,85 @@
 import streamlit as st
 from pathlib import Path
-import os
 import sys
 from constants.tickers import tickers
-
-# Voeg project root toe aan Python path
-sys.path.append(str(Path(__file__).parent.parent))
-
-# Clear cache bij opstarten
-st.cache_data.clear()
-
-# Importeer vanuit de juiste locaties
 from pages.sidebar import show as sidebar_ui
 from utils.data_loader import load_data, preprocess_data
 from pages.analysis import show as show_analysis
 from pages.backtesting import show as show_backtest
 
-# Pagina-instellingen
-st.set_page_config(layout="wide")
-st.title("📈 Pairs Trading Monitor")
+# Configuratie
+def setup():
+    """Initialiseer applicatie-instellingen"""
+    # Pad configuratie
+    sys.path.append(str(Path(__file__).parent.parent))
+    
+    # Cache leegmaken
+    st.cache_data.clear()
+    
+    # Pagina config
+    st.set_page_config(
+        layout="wide",
+        page_title="Pairs Trading Monitor",
+        page_icon="📈"
+    )
+
+def load_and_prepare_data(params):
+    """
+    Laad en verwerk de data voor de geselecteerde coins
+    
+    Args:
+        params (dict): Parameters uit sidebar
+        
+    Returns:
+        pd.DataFrame: Voorbereide dataset
+    """
+    try:
+        # Data ophalen
+        with st.spinner("Bezig met laden van data..."):
+            data1 = load_data(params['coin1'], params['period'], params['interval'])
+            data2 = load_data(params['coin2'], params['period'], params['interval'])
+        
+        if data1.empty or data2.empty:
+            st.error("Geen data beschikbaar voor één of beide coins")
+            st.stop()
+            
+        # Data verwerken
+        df = preprocess_data(data1, data2)
+        if df.empty:
+            st.error("Geen overlappende data tussen de geselecteerde coins")
+            st.stop()
+            
+        return df
+        
+    except Exception as e:
+        st.error(f"Fout bij verwerken van data: {str(e)}")
+        st.stop()
 
 def main():
-    # Sidebar UI
-    sidebar_params = sidebar_ui(tickers)
+    """Hoofdapplicatie"""
+    setup()
+    st.title("📈 Pairs Trading Monitor")
     
-    # Data ophalen
-    data1 = load_data(sidebar_params['coin1'], sidebar_params['periode'], sidebar_params['interval'])
-    data2 = load_data(sidebar_params['coin2'], sidebar_params['periode'], sidebar_params['interval'])
-    
-    if data1.empty or data2.empty:
-        st.error("Geen data beschikbaar voor één of beide coins. Probeer een andere combinatie of periode.")
+    try:
+        # Laad sidebar en parameters
+        params = sidebar_ui(tickers)
+        
+        # Data pipeline
+        df = load_and_prepare_data(params)
+        
+        # Analyse weergeven
+        show_analysis(df, params)
+        
+        # Optionele backtest
+        if params.get('run_backtest', False):
+            with st.spinner("Backtest uitvoeren..."):
+                df_backtest, trades = show_backtest(df, params)
+                if trades:
+                    show_backtest(df_backtest, trades)
+                    
+    except Exception as e:
+        st.error(f"Er is een onverwachte fout opgetreden: {str(e)}")
         st.stop()
-    
-    # Data verwerken
-    df = preprocess_data(data1, data2)
-    
-    # Toon analyse
-    show_analysis(df, sidebar_params)
-    
-    # Voer backtest uit en toon resultaten
-    if 'run_backtest' in sidebar_params and sidebar_params['run_backtest']:
-        df_backtest, trades = show_backtest(df, sidebar_params)
-        if trades:
-            show_backtest(df_backtest, trades)
 
 if __name__ == "__main__":
     main()
