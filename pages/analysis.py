@@ -5,6 +5,17 @@ import pandas as pd
 import numpy as np
 
 def show(data_and_params):
+    """Voeg debug checks toe"""
+    df = data_and_params['df']
+    
+    # Debug output
+    st.write("Beschikbare kolommen:", df.columns.tolist())
+    
+    if 'zscore' not in df.columns:
+        st.error("Z-score kolom ontbreekt in DataFrame!")
+        st.stop()
+    
+    # Rest van je analyse code...
     
     df = data_and_params['df']
     params = data_and_params['params']
