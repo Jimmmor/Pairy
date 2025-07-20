@@ -1,18 +1,26 @@
-# logic/data_loader.py
 import yfinance as yf
 import pandas as pd
 import streamlit as st
+from sklearn.linear_model import LinearRegression
 
-@st.cache_data
-def fetch_data(ticker, period, interval):
-    df = yf.download(ticker, period=period, interval=interval)
-    return df['Close'] if 'Close' in df else df.iloc[:, 0]
+@st.cache_data(ttl=3600)
+def load_data(ticker, period, interval):
+    """Laad data van Yahoo Finance met caching"""
+    try:
+        data = yf.download(ticker, period=period, interval=interval)
+        return data[['Close']].rename(columns={'Close': 'price'})
+    except Exception as e:
+        st.error(f"Fout bij laden {ticker}: {str(e)}")
+        return pd.DataFrame()
 
-def load_and_process_data(params):
-    d1 = fetch_data(params['ticker1'], params['periode'], params['interval'])
-    d2 = fetch_data(params['ticker2'], params['periode'], params['interval'])
-    
-    df = pd.DataFrame({'price1': d1, 'price2': d2}).dropna()
-    df = df.align(df, join='inner')[0]
-    
-    return df, {'start': df.index.min(), 'end': df.index.max()}
+def preprocess_data(data1, data2):
+    """Combineer twee datasets op datum"""
+    try:
+        df = pd.concat([
+            data1.rename(columns={'price': 'price1'}),
+            data2.rename(columns={'price': 'price2'})
+        ], axis=1).dropna()
+        return df
+    except Exception as e:
+        st.error(f"Fout bij verwerken data: {str(e)}")
+        return pd.DataFrame()
