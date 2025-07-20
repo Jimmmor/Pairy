@@ -14,13 +14,28 @@ def load_data(ticker, period, interval):
         return pd.DataFrame()
 
 def preprocess_data(data1, data2):
-    """Combineer twee datasets op datum"""
+    """Combineer data en bereken statistieken"""
     try:
+        # Combineer data
         df = pd.concat([
-            data1.rename(columns={'price': 'price1'}),
-            data2.rename(columns={'price': 'price2'})
+            data1['Close'].rename('price1'),
+            data2['Close'].rename('price2')
         ], axis=1).dropna()
+        
+        if df.empty:
+            st.error("Geen overlappende data tussen de assets")
+            return pd.DataFrame()
+        
+        # Bereken spread en z-scores
+        X = df['price1'].values.reshape(-1, 1)
+        y = df['price2'].values
+        
+        model = LinearRegression().fit(X, y)
+        df['spread'] = df['price2'] - (model.intercept_ + model.coef_[0] * df['price1'])
+        df['zscore'] = (df['spread'] - df['spread'].mean()) / df['spread'].std()
+        
         return df
+        
     except Exception as e:
-        st.error(f"Fout bij verwerken data: {str(e)}")
+        st.error(f"Data verwerkingsfout: {str(e)}")
         return pd.DataFrame()
